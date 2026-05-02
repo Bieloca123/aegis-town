@@ -101,6 +101,11 @@ alter table public.profiles add column if not exists skin           text;
 alter table public.profiles add column if not exists visited_realms text[];
 alter table public.profiles add column if not exists created_at     timestamptz;
 
+-- Internal-team rollout: members-only gate. After Google OAuth, employees
+-- are held at /welcome until they enter the shared ATHENA_ACCESS_CODE,
+-- which flips this to true. RLS policies below check this column.
+alter table public.profiles add column if not exists is_member boolean not null default false;
+
 -- Backfill NULLs from a pre-existing schema before enforcing NOT NULL.
 update public.profiles set skin           = '009' where skin           is null;
 update public.profiles set visited_realms = '{}'      where visited_realms is null;
@@ -159,18 +164,25 @@ on conflict (id) do nothing;
 alter table public.realms   enable row level security;
 alter table public.profiles enable row level security;
 
--- realms: anyone signed in can read by share_id; only the owner can write.
+-- realms: members-only access to the single shared office realm.
+-- Employees can only SELECT realms if they are flagged is_member=true on
+-- their profile. INSERT is removed entirely — no employee can create new
+-- realms; only an admin via the service_role key (which bypasses RLS) can.
 drop policy if exists "realms readable by anyone signed in"  on public.realms;
-create policy "realms readable by anyone signed in"
+drop policy if exists "shared realm readable by members"     on public.realms;
+create policy "shared realm readable by members"
   on public.realms for select
   to authenticated
-  using (true);
+  using (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.is_member = true
+    )
+  );
 
 drop policy if exists "owner can insert realms" on public.realms;
-create policy "owner can insert realms"
-  on public.realms for insert
-  to authenticated
-  with check (owner_id = auth.uid());
+-- (no INSERT policy → RLS denies inserts from authenticated users)
 
 drop policy if exists "owner can update own realms" on public.realms;
 create policy "owner can update own realms"
