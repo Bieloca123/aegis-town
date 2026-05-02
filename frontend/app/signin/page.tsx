@@ -10,7 +10,17 @@ export default function Login() {
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: process.env.NEXT_PUBLIC_BASE_URL + '/auth/callback'
+                redirectTo: process.env.NEXT_PUBLIC_BASE_URL + '/auth/callback',
+                // Request read-only access to the user's primary calendar so
+                // the in-app CalendarWidget can show their next meetings.
+                // access_type:'offline' + prompt:'consent' ensures Google
+                // issues a refresh token so Supabase can keep provider_token
+                // alive across sessions.
+                scopes: 'https://www.googleapis.com/auth/calendar.readonly',
+                queryParams: {
+                    access_type: 'offline',
+                    prompt: 'consent',
+                },
             }
         })
     }

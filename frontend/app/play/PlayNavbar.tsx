@@ -10,6 +10,7 @@ import AnimatedCharacter from './SkinMenu/AnimatedCharacter'
 import { useEffect } from 'react'
 import { videoChat } from '@/utils/video-chat/video-chat'
 import StatusDropdown, { Status } from './StatusDropdown'
+import CalendarWidget from '@/components/CalendarWidget/CalendarWidget'
 
 type PlayNavbarProps = {
     username: string
@@ -49,6 +50,7 @@ const PlayNavbar:React.FC<PlayNavbarProps> = ({ username, skin, initialStatus })
                 </div>
             </div>
             <MicAndCameraButtons />
+            <CalendarWidget />
             <button className='aspect-square grid place-items-center rounded-lg p-1 outline-none bg-secondary hover:bg-light-secondary ml-auto animate-colors' onClick={onClickSkinButton}>
                 <TShirt className='h-8 w-8'/>
             </button>
