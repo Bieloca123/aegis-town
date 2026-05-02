@@ -38,3 +38,10 @@ dist
 
 # Claude Code harness — personal/env-specific overrides only
 .claude/settings.local.json
+
+# Playwright MCP browser cache (console logs, screenshots)
+.playwright-mcp/
+
+# Scratch screenshots and brand experiments at the repo root
+# (real brand assets live under frontend/public/brand/)
+/*.png

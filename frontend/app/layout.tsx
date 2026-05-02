@@ -18,8 +18,8 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Aegis City",
-  description: "Aegis City — multiplayer spatial workspace.",
+  title: "Athena Growth · Sales Hub",
+  description: "Espaço virtual da Athena Growth Marketing — onde o time se encontra, conversa e cria.",
 }
 
 export default function RootLayout({

@@ -32,7 +32,7 @@ export default async function App() {
     return (
         <div>
             <Navbar />
-            <h1 className='text-3xl pl-4 sm:pl-8 pt-8'>Your Spaces</h1>
+            <h1 className='text-3xl font-semibold tracking-tight pl-4 sm:pl-8 pt-8'>Suas Salas</h1>
             <RealmsMenu realms={realms} errorMessage={errorMessage}/>
         </div>
     )

@@ -16,14 +16,18 @@ module.exports = {
             'rainbow-less-disabled': "linear-gradient(45deg, darkred, darkblue, darkindigo)",
         },
       colors: {
-        primary: "#282D4E",
-        secondary: "#323A64",
-        "light-secondary": '#545C8E',
-        darkblue: "#2a3154",
-        quaternary: "#06d6a0",
-        quaternaryhover: "#5FE5C2",
-        button: "#202540",
-        'light-gray': "#464B67",
+        // Athena Growth brand palette — monochrome with a single cyan accent.
+        // Surfaces step from near-black up to a soft mid-grey.
+        primary: "#0E0F14",            // base background (page)
+        secondary: "#1A1C24",           // navbar / cards
+        "light-secondary": "#262934",   // hover, raised surface
+        darkblue: "#11131A",            // deepest pit (kept name for compat)
+        "light-gray": "#3A3D4A",        // subtle borders / disabled
+        // Accent: bright cream-white for primary CTAs (matches brand wordmark),
+        // with a soft cyan-glow on hover (the "tech" overlay on the brand).
+        quaternary: "#F5F5F7",
+        quaternaryhover: "#5EE7F0",
+        button: "#0E0F14",              // text-on-CTA
       },
     },
   },
