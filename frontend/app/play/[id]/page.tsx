@@ -18,7 +18,7 @@ export default async function Play({ params, searchParams }: { params: { id: str
         return redirect('/signin')
     }
     const { data, error } = !searchParams.shareId ? await supabase.from('realms').select('map_data, owner_id, name').eq('id', params.id).single() : await getPlayRealmData(session.access_token, searchParams.shareId)
-    const { data: profile, error: profileError } = await supabase.from('profiles').select('skin, display_name').eq('id', user.id).single()
+    const { data: profile, error: profileError } = await supabase.from('profiles').select('skin, display_name, status').eq('id', user.id).single()
     // Show not found page if no data is returned
     if (!data || !profile) {
         const message = error?.message || profileError?.message
@@ -31,6 +31,9 @@ export default async function Play({ params, searchParams }: { params: { id: str
 
     let skin = skinIds.includes(profile.skin) ? profile.skin : defaultSkin
     const username = profile.display_name?.trim() || formatEmailToName(user.user_metadata.email)
+    const initialStatus = (['available', 'busy', 'dnd'] as const).includes(profile.status as any)
+        ? (profile.status as 'available' | 'busy' | 'dnd')
+        : 'available'
 
     if (searchParams.shareId && realm.owner_id !== user.id) {
         updateVisitedRealms(session.access_token, searchParams.shareId)
@@ -46,6 +49,7 @@ export default async function Play({ params, searchParams }: { params: { id: str
             shareId={searchParams.shareId || ''}
             initialSkin={skin}
             name={realm.name}
+            initialStatus={initialStatus}
         />
     )
 }

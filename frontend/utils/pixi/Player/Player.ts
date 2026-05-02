@@ -66,11 +66,28 @@ export class Player {
 
     private currentChannel: string = 'local'
 
+    // Local-only presence status. Drives DND-suppresses-proximity-video.
+    // Updated reactively via the 'local-status' signal emitted by StatusDropdown.
+    public localStatus: 'available' | 'busy' | 'dnd' = 'available'
+
     constructor(skin: string, playApp: PlayApp, username: string, isLocal: boolean = false) {
         this.skin = skinIds.includes(skin) ? skin : defaultSkin
         this.playApp = playApp
         this.username = username
         this.isLocal = isLocal
+
+        if (isLocal) {
+            signal.on('local-status', this.onLocalStatusChange)
+        }
+    }
+
+    private onLocalStatusChange = (status: 'available' | 'busy' | 'dnd') => {
+        this.localStatus = status
+        if (status === 'dnd' && this.currentChannel !== 'local') {
+            videoChat.leaveChannel()
+            this.currentChannel = 'local'
+            this.playApp.fadeOutTiles()
+        }
     }
 
     private async loadAnimations() {
@@ -290,6 +307,8 @@ export class Player {
 
     public checkIfShouldJoinChannel = (newTilePosition: Point) => {
         if (!this.isLocal) return
+        // DND mutes proximity video — don't auto-join any channel while focused.
+        if (this.localStatus === 'dnd') return
 
         const tile = this.playApp.realmData.rooms[this.playApp.currentRoomIndex].tilemap[`${newTilePosition.x}, ${newTilePosition.y}`]
         if (tile && tile.privateAreaId) {

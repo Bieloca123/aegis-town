@@ -9,14 +9,16 @@ import { useVideoChat } from '../hooks/useVideoChat'
 import AnimatedCharacter from './SkinMenu/AnimatedCharacter'
 import { useEffect } from 'react'
 import { videoChat } from '@/utils/video-chat/video-chat'
+import StatusDropdown, { Status } from './StatusDropdown'
 
 type PlayNavbarProps = {
     username: string
     skin: string
+    initialStatus: Status
 }
 
 
-const PlayNavbar:React.FC<PlayNavbarProps> = ({ username, skin }) => {
+const PlayNavbar:React.FC<PlayNavbarProps> = ({ username, skin, initialStatus }) => {
 
     const { setModal } = useModal()
     const { isCameraMuted } = useVideoChat()
@@ -41,9 +43,9 @@ const PlayNavbar:React.FC<PlayNavbarProps> = ({ username, skin }) => {
 
                         </div>
                 </div>
-                <div className='w-full flex flex-col p-1 pl-2'>
-                    <p className='text-white text-xs'>{username}</p>
-                    <p className='text-[#BDBDBD] text-xs'>Available</p>
+                <div className='w-full flex flex-col p-1 pl-2 justify-center'>
+                    <p className='text-white text-xs truncate'>{username}</p>
+                    <StatusDropdown initialStatus={initialStatus} />
                 </div>
             </div>
             <MicAndCameraButtons />

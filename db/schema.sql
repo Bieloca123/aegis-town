@@ -112,6 +112,26 @@ alter table public.profiles add column if not exists is_member boolean not null 
 alter table public.profiles add column if not exists display_name        text;
 alter table public.profiles add column if not exists onboarding_complete boolean not null default false;
 
+-- Slack-style presence status: drives the navbar dropdown and (via DND)
+-- suppresses proximity-based Agora video auto-join when the user wants to
+-- focus. Values: 'available' | 'busy' | 'dnd'.
+alter table public.profiles add column if not exists status text;
+update public.profiles set status = 'available' where status is null;
+alter table public.profiles alter column status set default 'available';
+do $$
+begin
+  if not exists (select 1 from public.profiles where status is null) then
+    alter table public.profiles alter column status set not null;
+  end if;
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'profiles_status_check' and conrelid = 'public.profiles'::regclass
+  ) then
+    alter table public.profiles add constraint profiles_status_check
+      check (status in ('available','busy','dnd'));
+  end if;
+end $$;
+
 -- Backfill NULLs from a pre-existing schema before enforcing NOT NULL.
 update public.profiles set skin           = '009' where skin           is null;
 update public.profiles set visited_realms = '{}'      where visited_realms is null;

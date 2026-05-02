@@ -8,6 +8,7 @@ import signal from '@/utils/signal'
 import IntroScreen from './IntroScreen'
 import VideoBar from '@/components/VideoChat/VideoBar'
 import { AgoraVideoChatProvider } from '../hooks/useVideoChat'
+import { Status } from './StatusDropdown'
 
 type PlayClientProps = {
     mapData: RealmData
@@ -18,9 +19,10 @@ type PlayClientProps = {
     shareId: string
     initialSkin: string
     name: string
+    initialStatus: Status
 }
 
-const PlayClient:React.FC<PlayClientProps> = ({ mapData, username, access_token, realmId, uid, shareId, initialSkin, name }) => {
+const PlayClient:React.FC<PlayClientProps> = ({ mapData, username, access_token, realmId, uid, shareId, initialSkin, name, initialStatus }) => {
 
     const { setErrorModal, setDisconnectedMessage } = useModal()
 
@@ -68,7 +70,7 @@ const PlayClient:React.FC<PlayClientProps> = ({ mapData, username, access_token,
                     shareId={shareId} 
                     initialSkin={skin} 
                 />
-                <PlayNavbar username={username} skin={skin}/>
+                <PlayNavbar username={username} skin={skin} initialStatus={initialStatus}/>
             </div>}
             {showIntroScreen && <IntroScreen realmName={name} skin={skin} username={username} setShowIntroScreen={setShowIntroScreen}/>}    
         </AgoraVideoChatProvider>
