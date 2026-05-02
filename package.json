@@ -1,0 +1,15 @@
+{
+  "name": "aegis-city",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Aegis City — multiplayer spatial web app (Next.js + Supabase + Socket.io + Pixi.js + Agora).",
+  "scripts": {
+    "dev": "concurrently -n frontend,backend -c blue,green \"npm --prefix frontend run dev\" \"npm --prefix backend run dev\"",
+    "install:all": "npm --prefix frontend install && npm --prefix backend install",
+    "build": "npm --prefix frontend run build && npm --prefix backend run build",
+    "start": "concurrently -n frontend,backend -c blue,green \"npm --prefix frontend run start\" \"npm --prefix backend run start\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
