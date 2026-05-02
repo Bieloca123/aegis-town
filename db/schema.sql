@@ -112,6 +112,15 @@ alter table public.profiles add column if not exists is_member boolean not null 
 alter table public.profiles add column if not exists display_name        text;
 alter table public.profiles add column if not exists onboarding_complete boolean not null default false;
 
+-- email mirror from auth.users — populated by the handle_new_user trigger
+-- and used by the /notify webhook to route notifications by email
+-- (e.g. "the user ClickUp @-mentioned has email X; push a toast to their
+-- socket session"). Indexed for fast lookups.
+alter table public.profiles add column if not exists email text;
+update public.profiles p set email = u.email from auth.users u
+  where u.id = p.id and (p.email is distinct from u.email);
+create index if not exists profiles_email_idx on public.profiles (email);
+
 -- Slack-style presence status: drives the navbar dropdown and (via DND)
 -- suppresses proximity-based Agora video auto-join when the user wants to
 -- focus. Values: 'available' | 'busy' | 'dnd'.
@@ -165,8 +174,9 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id) values (new.id)
-  on conflict (id) do nothing;
+  insert into public.profiles (id, email)
+    values (new.id, new.email)
+    on conflict (id) do update set email = excluded.email;
   return new;
 end;
 $$;

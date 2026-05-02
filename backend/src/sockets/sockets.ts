@@ -38,6 +38,11 @@ export function sockets(io: Server) {
     // Handle a connection
     io.on('connection', (socket) => {
 
+        // Join a personal room keyed by uid so external webhooks (notify.ts)
+        // can push notifications to this user without scanning all sockets.
+        const personalRoom = `user:${socket.handshake.query.uid}`
+        socket.join(personalRoom)
+
         function on(eventName: string, schema: z.ZodTypeAny, callback: OnEventCallback) {
             socket.on(eventName, (data: any) => {
                 const success = schema.safeParse(data).success

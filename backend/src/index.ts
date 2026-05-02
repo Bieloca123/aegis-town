@@ -4,6 +4,7 @@ import http from 'http'
 import { Server as SocketIOServer } from 'socket.io'
 import { sockets } from './sockets/sockets'
 import routes from './routes/routes'
+import { notifyRouter } from './routes/notify'
 import { supabase } from './supabase'
 import { sessionManager } from './session'
 
@@ -16,6 +17,9 @@ app.use(cors({
     origin: process.env.FRONTEND_URL
 }))
 
+// JSON body parser — required by /webhooks/notify (and any future webhooks)
+app.use(express.json({ limit: '32kb' }))
+
 // Initialize Socket.IO server
 const io = new SocketIOServer(server, {
   cors: {
@@ -24,6 +28,7 @@ const io = new SocketIOServer(server, {
 })
 
 app.use(routes())
+app.use(notifyRouter(io))
 
 sockets(io)
 
