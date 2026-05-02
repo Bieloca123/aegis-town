@@ -9,6 +9,7 @@ import IntroScreen from './IntroScreen'
 import VideoBar from '@/components/VideoChat/VideoBar'
 import { AgoraVideoChatProvider } from '../hooks/useVideoChat'
 import { Status } from './StatusDropdown'
+import ChatPanel from '@/components/ChatPanel/ChatPanel'
 
 type PlayClientProps = {
     mapData: RealmData
@@ -71,6 +72,7 @@ const PlayClient:React.FC<PlayClientProps> = ({ mapData, username, access_token,
                     initialSkin={skin} 
                 />
                 <PlayNavbar username={username} skin={skin} initialStatus={initialStatus}/>
+                <ChatPanel realmId={realmId} uid={uid} />
             </div>}
             {showIntroScreen && <IntroScreen realmName={name} skin={skin} username={username} setShowIntroScreen={setShowIntroScreen}/>}    
         </AgoraVideoChatProvider>

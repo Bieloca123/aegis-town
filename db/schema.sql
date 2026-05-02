@@ -238,10 +238,52 @@ create policy "profiles updatable by self"
   with check (id = auth.uid());
 
 -- ----------------------------------------------------------------------------
--- 5. Realtime publication
+-- 5. messages — persistent per-realm chat panel (Phase 2.3)
+--   Backs the side-drawer ChatPanel. Inserted directly via the Supabase
+--   client (RLS-gated to members), broadcast to other clients via the
+--   supabase_realtime publication.
+-- ----------------------------------------------------------------------------
+create table if not exists public.messages (
+  id         uuid primary key default gen_random_uuid(),
+  realm_id   uuid not null references public.realms(id)   on delete cascade,
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  content    text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists messages_realm_created_idx
+  on public.messages (realm_id, created_at desc);
+
+alter table public.messages enable row level security;
+
+drop policy if exists "messages readable by members" on public.messages;
+create policy "messages readable by members"
+  on public.messages for select
+  to authenticated
+  using (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid() and profiles.is_member = true
+    )
+  );
+
+drop policy if exists "members can post messages" on public.messages;
+create policy "members can post messages"
+  on public.messages for insert
+  to authenticated
+  with check (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid() and profiles.is_member = true
+    )
+  );
+
+-- ----------------------------------------------------------------------------
+-- 6. Realtime publication
 --   backend/src/index.ts:51-55 subscribes to postgres_changes on the realms
---   table (UPDATE + DELETE). The realms table must be a member of the
---   supabase_realtime publication for those events to fire.
+--   table (UPDATE + DELETE). ChatPanel (Phase 2.3) subscribes to INSERT on
+--   public.messages. Both tables must be on the supabase_realtime publication.
 -- ----------------------------------------------------------------------------
 do $$
 begin
@@ -250,5 +292,11 @@ begin
     where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'realms'
   ) then
     execute 'alter publication supabase_realtime add table public.realms';
+  end if;
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'messages'
+  ) then
+    execute 'alter publication supabase_realtime add table public.messages';
   end if;
 end $$;
