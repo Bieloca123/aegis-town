@@ -4,7 +4,7 @@ import { Point, Coordinate, AnimationState, Direction } from '../types'
 import { PlayApp } from '../PlayApp'
 import { bfs } from '../pathfinding'
 import { server } from '../../backend/server'
-import { defaultSkin, skins } from './skins'
+import { defaultSkin, skinIds } from './skins'
 import signal from '@/utils/signal'
 import { videoChat } from '@/utils/video-chat/video-chat'
 function formatText(message: string, maxLength: number): string {
@@ -67,7 +67,7 @@ export class Player {
     private currentChannel: string = 'local'
 
     constructor(skin: string, playApp: PlayApp, username: string, isLocal: boolean = false) {
-        this.skin = skin
+        this.skin = skinIds.includes(skin) ? skin : defaultSkin
         this.playApp = playApp
         this.username = username
         this.isLocal = isLocal
@@ -93,7 +93,7 @@ export class Player {
     }
 
     public changeSkin = async (skin: string) => {
-        if (!skins.includes(skin)) return
+        if (!skinIds.includes(skin)) return
 
         this.skin = skin
         await this.loadAnimations()

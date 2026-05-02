@@ -13,6 +13,20 @@ export class VideoChat {
 
     private channelTimeout: NodeJS.Timeout | null = null
 
+    // Per-tab nonce appended to the Supabase user.id so multiple tabs / windows
+    // signed into the same account don't collide on the same Agora UID
+    // (Agora kicks the older connection, which produces EXCHANGE_SDP_FAILED).
+    // VideoBar.tsx already slices the first 36 chars (UUID prefix) when
+    // matching skins, so anything after that is treated as a free-form suffix.
+    private tabNonce: string = Math.random().toString(36).slice(2, 8)
+
+    // Monotonic generation counter so that overlapping async bodies of
+    // joinChannel / leaveChannel can self-cancel after each await point
+    // when a newer call has superseded them. Without this, walking quickly
+    // across proximity tiles can race two `client.join()` invocations against
+    // the same client, producing the same SDP failure mode.
+    private opGeneration: number = 0
+
     constructor() {
         AgoraRTC.setLogLevel(4)
         this.client.on('user-published', this.onUserPublished)
@@ -109,25 +123,43 @@ export class VideoChat {
             clearTimeout(this.channelTimeout)
         }
 
+        const myGen = ++this.opGeneration
+
         this.channelTimeout = setTimeout(async () => {
+            if (myGen !== this.opGeneration) return
             if (channel === this.currentChannel) return
+
             const uniqueChannelId = this.createUniqueChannelId(realmId, channel)
             const token = await generateToken(uniqueChannelId)
+            if (myGen !== this.opGeneration) return
             if (!token) return
 
             if (this.client.connectionState === 'CONNECTED') {
-                await this.client.leave()
+                try { await this.client.leave() } catch {}
+                if (myGen !== this.opGeneration) return
             }
             this.resetRemoteUsers()
 
-            await this.client.join(process.env.NEXT_PUBLIC_AGORA_APP_ID!, uniqueChannelId, token, uid)
+            try {
+                await this.client.join(
+                    process.env.NEXT_PUBLIC_AGORA_APP_ID!,
+                    uniqueChannelId,
+                    token,
+                    `${uid}${this.tabNonce}`
+                )
+            } catch {
+                // Agora killed our handshake (e.g. duplicate UID kick from another
+                // tab, transient network). A newer joinChannel will recover.
+                return
+            }
+            if (myGen !== this.opGeneration) return
             this.currentChannel = channel
 
             if (this.microphoneTrack && this.microphoneTrack.enabled) {
-                await this.client.publish([this.microphoneTrack])
+                try { await this.client.publish([this.microphoneTrack]) } catch {}
             }
             if (this.cameraTrack && this.cameraTrack.enabled) {
-                await this.client.publish([this.cameraTrack])
+                try { await this.client.publish([this.cameraTrack]) } catch {}
             }
         }, 1000)
     }
@@ -137,16 +169,18 @@ export class VideoChat {
             clearTimeout(this.channelTimeout)
         }
 
+        const myGen = ++this.opGeneration
+
         this.channelTimeout = setTimeout(async () => {
+            if (myGen !== this.opGeneration) return
             if (this.currentChannel === '') return
 
             if (this.client.connectionState === 'CONNECTED') {
-                await this.client.leave()
+                try { await this.client.leave() } catch {}
                 this.currentChannel = ''
             }
             this.resetRemoteUsers()
         }, 1000)
-        
     }
 
     public destroy() {

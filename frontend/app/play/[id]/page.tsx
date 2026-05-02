@@ -6,6 +6,7 @@ import { getPlayRealmData } from '@/utils/supabase/getPlayRealmData'
 import PlayClient from '../PlayClient'
 import { updateVisitedRealms } from '@/utils/supabase/updateVisitedRealms'
 import { formatEmailToName } from '@/utils/formatEmailToName'
+import { skinIds, defaultSkin } from '@/utils/pixi/Player/skins'
 
 export default async function Play({ params, searchParams }: { params: { id: string }, searchParams: { shareId: string } }) {
 
@@ -28,7 +29,7 @@ export default async function Play({ params, searchParams }: { params: { id: str
     const realm = data
     const map_data = realm.map_data
 
-    let skin = profile.skin
+    let skin = skinIds.includes(profile.skin) ? profile.skin : defaultSkin
 
     if (searchParams.shareId && realm.owner_id !== user.id) {
         updateVisitedRealms(session.access_token, searchParams.shareId)

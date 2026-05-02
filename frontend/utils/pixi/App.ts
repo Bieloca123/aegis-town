@@ -31,6 +31,7 @@ export class App {
             resizeTo: container,
             backgroundColor: this.backgroundColor,
             roundPixels: true,
+            preference: 'webgl',
         })
         this.initialized = true
 
