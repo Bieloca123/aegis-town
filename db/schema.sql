@@ -106,6 +106,12 @@ alter table public.profiles add column if not exists created_at     timestamptz;
 -- which flips this to true. RLS policies below check this column.
 alter table public.profiles add column if not exists is_member boolean not null default false;
 
+-- Onboarding flow: first-time users are routed to /onboarding to pick a
+-- display name + avatar before entering the office. The auth callback uses
+-- profiles.display_name as the in-game username (instead of derived-from-email).
+alter table public.profiles add column if not exists display_name        text;
+alter table public.profiles add column if not exists onboarding_complete boolean not null default false;
+
 -- Backfill NULLs from a pre-existing schema before enforcing NOT NULL.
 update public.profiles set skin           = '009' where skin           is null;
 update public.profiles set visited_realms = '{}'      where visited_realms is null;
