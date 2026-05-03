@@ -18,8 +18,7 @@ export default async function Welcome() {
         .single()
 
     if (profile?.is_member) {
-        const realmId = process.env.NEXT_PUBLIC_DEFAULT_REALM_ID
-        return redirect(realmId ? `/play/${realmId}` : '/app')
+        return redirect('/app')
     }
 
     return (

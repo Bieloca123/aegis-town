@@ -39,6 +39,5 @@ export async function verifyAccessCode(formData: FormData) {
         return { error: error.message }
     }
 
-    const realmId = process.env.NEXT_PUBLIC_DEFAULT_REALM_ID
-    redirect(realmId ? `/play/${realmId}` : '/app')
+    redirect('/app')
 }

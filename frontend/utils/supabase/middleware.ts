@@ -60,7 +60,6 @@ export const updateSession = async (request: NextRequest) => {
 
     const isMember = profile?.is_member === true;
     const onboarded = profile?.onboarding_complete === true;
-    const realmId = process.env.NEXT_PUBLIC_DEFAULT_REALM_ID;
 
     if (!isMember) {
       if (path === "/welcome") return response;
@@ -72,8 +71,8 @@ export const updateSession = async (request: NextRequest) => {
       return NextResponse.redirect(new URL("/onboarding", request.url));
     }
 
-    if (realmId && (path === "/" || path === "/signin" || path === "/welcome" || path === "/onboarding" || path === "/app")) {
-      return NextResponse.redirect(new URL(`/play/${realmId}`, request.url));
+    if (path === "/" || path === "/signin") {
+      return NextResponse.redirect(new URL("/app", request.url));
     }
 
     return response;

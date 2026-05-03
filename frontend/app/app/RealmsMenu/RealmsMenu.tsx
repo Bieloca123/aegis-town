@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { request } from '@/utils/backend/requests'
 import { createClient } from '@/utils/supabase/client'
 import revalidate from '@/utils/revalidate'
+import { useModal } from '@/app/hooks/useModal'
 
 type Realm = {
     id: string,
@@ -26,6 +27,7 @@ const RealmsMenu:React.FC<RealmsMenuProps> = ({ realms, errorMessage }) => {
     const [playerCounts, setPlayerCounts] = useState<number[]>([])
     const router = useRouter()
     const supabase = createClient()
+    const { setModal } = useModal()
 
     useEffect(() => {
         if (errorMessage) {
@@ -60,7 +62,10 @@ const RealmsMenu:React.FC<RealmsMenuProps> = ({ realms, errorMessage }) => {
         <>
             {/* Mobile View */}
             <div className='flex flex-col items-center p-4 gap-2 sm:hidden'>
-                {realms.length === 0 && <p className='text-center'>You have no spaces you can join. Create one on desktop to get started!</p>}
+                <BasicButton className='w-full text-xl' onClick={() => setModal('Create Realm')}>
+                    + Create Space
+                </BasicButton>
+                {realms.length === 0 && <p className='text-center'>You have no spaces you can join. Create a space to get started!</p>}
                 {realms.map((realm, index) => {
 
                     function selectRealm() {
@@ -85,6 +90,11 @@ const RealmsMenu:React.FC<RealmsMenuProps> = ({ realms, errorMessage }) => {
 
             {/* Desktop View */}
             <div className='flex-col items-center w-full p-8 hidden sm:flex'>
+                <div className='w-full flex justify-end mb-6'>
+                    <BasicButton className='text-lg' onClick={() => setModal('Create Realm')}>
+                        + Create Space
+                    </BasicButton>
+                </div>
                 {realms.length === 0 && <p className='text-center'>You have no spaces you can join. Create a space to get started!</p>}
                 <div className='hidden sm:grid grid-cols-2 md:grid-cols-3 gap-8 w-full'>
                     {realms.map((realm, index) => {
