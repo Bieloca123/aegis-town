@@ -121,6 +121,17 @@ update public.profiles p set email = u.email from auth.users u
   where u.id = p.id and (p.email is distinct from u.email);
 create index if not exists profiles_email_idx on public.profiles (email);
 
+-- ClickUp identity link — set by /clickup/link after the user picks themselves
+-- from the workspace member list and the server validates that ClickUp member's
+-- email equals auth.users.email (case-insensitive). Used by n8n to route
+-- ClickUp mention/assignment events to the right Aegis user. Unique partial
+-- index prevents two profiles from claiming the same ClickUp identity.
+alter table public.profiles add column if not exists clickup_user_id   bigint;
+alter table public.profiles add column if not exists clickup_username  text;
+alter table public.profiles add column if not exists clickup_linked_at timestamptz;
+create unique index if not exists profiles_clickup_user_id_idx
+  on public.profiles (clickup_user_id) where clickup_user_id is not null;
+
 -- Slack-style presence status: drives the navbar dropdown and (via DND)
 -- suppresses proximity-based Agora video auto-join when the user wants to
 -- focus. Values: 'available' | 'busy' | 'dnd'.
@@ -200,10 +211,10 @@ on conflict (id) do nothing;
 alter table public.realms   enable row level security;
 alter table public.profiles enable row level security;
 
--- realms: members-only access to the single shared office realm.
--- Employees can only SELECT realms if they are flagged is_member=true on
--- their profile. INSERT is removed entirely — no employee can create new
--- realms; only an admin via the service_role key (which bypasses RLS) can.
+-- realms: members can read all realms and create their own.
+-- Employees flagged is_member=true on their profile can SELECT any realm
+-- (single-tenant agency workspace) and INSERT realms they own. UPDATE/DELETE
+-- remain owner-only.
 drop policy if exists "realms readable by anyone signed in"  on public.realms;
 drop policy if exists "shared realm readable by members"     on public.realms;
 create policy "shared realm readable by members"
@@ -218,7 +229,17 @@ create policy "shared realm readable by members"
   );
 
 drop policy if exists "owner can insert realms" on public.realms;
--- (no INSERT policy → RLS denies inserts from authenticated users)
+create policy "owner can insert realms"
+  on public.realms for insert
+  to authenticated
+  with check (
+    owner_id = auth.uid()
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.is_member = true
+    )
+  );
 
 drop policy if exists "owner can update own realms" on public.realms;
 create policy "owner can update own realms"

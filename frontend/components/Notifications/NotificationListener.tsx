@@ -13,6 +13,7 @@ type NotificationPayload = {
 
 const KIND_DEFAULT_ICON: Record<string, string> = {
     clickup_mention: '💬',
+    clickup_assigned: '📋',
     calendar_reminder: '📅',
     n8n_alert: '⚡',
 }

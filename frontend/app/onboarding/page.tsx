@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import OnboardingForm from './OnboardingForm'
 import { defaultSkin } from '@/utils/pixi/Player/skins'
+import { fetchClickupMembers } from '@/utils/clickup/actions'
 
 function suggestNameFromEmail(email: string | undefined): string {
     if (!email) return ''
@@ -35,12 +36,20 @@ export default async function Onboarding() {
     }
 
     if (profile.onboarding_complete) {
-        const realmId = process.env.NEXT_PUBLIC_DEFAULT_REALM_ID
-        return redirect(realmId ? `/play/${realmId}` : '/app')
+        return redirect('/app')
     }
 
     const suggestedName = profile.display_name || suggestNameFromEmail(user.email)
     const initialSkin = profile.skin || defaultSkin
+
+    const rosterResult = await fetchClickupMembers()
+    const clickupMembers = 'members' in rosterResult ? rosterResult.members : []
+    const clickupFetchError =
+        'error' in rosterResult
+            ? rosterResult.detail
+                ? `${rosterResult.error} (${rosterResult.detail})`
+                : rosterResult.error
+            : undefined
 
     return (
         <div className='flex flex-col items-center w-full min-h-screen pt-16 px-4 pb-16 gradient'>
@@ -56,7 +65,13 @@ export default async function Onboarding() {
             <p className='text-sm opacity-70 mb-8 max-w-md text-center'>
                 Antes de entrar no escritório, escolha como o time vai te ver.
             </p>
-            <OnboardingForm initialName={suggestedName} initialSkin={initialSkin} />
+            <OnboardingForm
+                initialName={suggestedName}
+                initialSkin={initialSkin}
+                aegisEmail={user.email ?? ''}
+                clickupMembers={clickupMembers}
+                clickupFetchError={clickupFetchError}
+            />
         </div>
     )
 }

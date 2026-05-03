@@ -3,15 +3,28 @@ import { useState, useTransition } from 'react'
 import BasicButton from '@/components/BasicButton'
 import AnimatedCharacter from '../play/SkinMenu/AnimatedCharacter'
 import { skins } from '@/utils/pixi/Player/skins'
-import { completeOnboarding } from './actions'
+import { completeOnboarding, completeOnboardingWithClickup } from './actions'
+import ClickupIdentityPicker, {
+    type ClickupMember,
+    type LinkResult,
+} from '@/components/ClickupIdentityPicker/ClickupIdentityPicker'
 
 type Props = {
     initialName: string
     initialSkin: string
+    aegisEmail: string
+    clickupMembers: ClickupMember[]
+    clickupFetchError?: string
 }
 
-export default function OnboardingForm({ initialName, initialSkin }: Props) {
-    const [step, setStep] = useState<1 | 2>(1)
+export default function OnboardingForm({
+    initialName,
+    initialSkin,
+    aegisEmail,
+    clickupMembers,
+    clickupFetchError,
+}: Props) {
+    const [step, setStep] = useState<1 | 2 | 3>(1)
     const [name, setName] = useState(initialName)
     const [skin, setSkin] = useState(initialSkin)
     const [error, setError] = useState('')
@@ -27,7 +40,7 @@ export default function OnboardingForm({ initialName, initialSkin }: Props) {
         setStep(2)
     }
 
-    function submit() {
+    function skipClickupAndFinish() {
         setError('')
         const fd = new FormData()
         fd.set('displayName', name.trim())
@@ -35,6 +48,14 @@ export default function OnboardingForm({ initialName, initialSkin }: Props) {
         startTransition(async () => {
             const result = await completeOnboarding(fd)
             if (result?.error) setError(result.error)
+        })
+    }
+
+    async function linkClickupAndFinish(clickupUserId: number): Promise<LinkResult> {
+        return completeOnboardingWithClickup({
+            displayName: name.trim(),
+            skin,
+            clickupUserId,
         })
     }
 
@@ -61,45 +82,76 @@ export default function OnboardingForm({ initialName, initialSkin }: Props) {
         )
     }
 
-    return (
-        <div className='flex flex-col items-center gap-4 w-full max-w-3xl'>
-            <div className='flex flex-row items-center gap-4 mb-2'>
-                <AnimatedCharacter src={`/sprites/characters/Character_${skin}.png`} className='!w-24' />
-                <div className='text-left'>
-                    <p className='text-lg font-semibold'>{name}</p>
-                    <p className='text-xs opacity-60'>Avatar #{skin}</p>
+    if (step === 2) {
+        return (
+            <div className='flex flex-col items-center gap-4 w-full max-w-3xl'>
+                <div className='flex flex-row items-center gap-4 mb-2'>
+                    <AnimatedCharacter src={`/sprites/characters/Character_${skin}.png`} className='!w-24' />
+                    <div className='text-left'>
+                        <p className='text-lg font-semibold'>{name}</p>
+                        <p className='text-xs opacity-60'>Avatar #{skin}</p>
+                    </div>
                 </div>
-            </div>
-            <p className='text-sm opacity-70'>Escolha seu avatar</p>
-            <div className='grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2 max-h-[50vh] overflow-y-auto p-2 rounded-lg bg-black/20 w-full'>
-                {skins.map((s) => (
-                    <button
-                        key={s.id}
-                        type='button'
-                        onClick={() => setSkin(s.id)}
-                        className={`relative rounded-md p-1 transition-all ${
-                            skin === s.id
-                                ? 'ring-2 ring-white bg-white/10'
-                                : 'hover:bg-white/5 ring-1 ring-transparent'
-                        }`}
-                        title={s.name ?? `Avatar ${s.id}`}
+                <p className='text-sm opacity-70'>Escolha seu avatar</p>
+                <div className='grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2 max-h-[50vh] overflow-y-auto p-2 rounded-lg bg-black/20 w-full'>
+                    {skins.map((s) => (
+                        <button
+                            key={s.id}
+                            type='button'
+                            onClick={() => setSkin(s.id)}
+                            className={`relative rounded-md p-1 transition-all ${
+                                skin === s.id
+                                    ? 'ring-2 ring-white bg-white/10'
+                                    : 'hover:bg-white/5 ring-1 ring-transparent'
+                            }`}
+                            title={s.name ?? `Avatar ${s.id}`}
+                        >
+                            <AnimatedCharacter
+                                src={`/sprites/characters/Character_${s.id}.png`}
+                                noAnimation
+                                className='!w-full'
+                            />
+                        </button>
+                    ))}
+                </div>
+                <div className='flex flex-row gap-2 w-full max-w-sm mt-2'>
+                    <BasicButton
+                        onClick={() => setStep(1)}
+                        className='flex-1 !bg-transparent !border !border-white/20'
                     >
-                        <AnimatedCharacter
-                            src={`/sprites/characters/Character_${s.id}.png`}
-                            noAnimation
-                            className='!w-full'
-                        />
-                    </button>
-                ))}
+                        Voltar
+                    </BasicButton>
+                    <BasicButton onClick={() => setStep(3)} className='flex-1'>
+                        Próximo
+                    </BasicButton>
+                </div>
+                {error && <p className='text-sm text-red-400 text-center'>{error}</p>}
             </div>
-            <div className='flex flex-row gap-2 w-full max-w-sm mt-2'>
-                <BasicButton onClick={() => setStep(1)} className='flex-1 !bg-transparent !border !border-white/20'>
-                    Voltar
-                </BasicButton>
-                <BasicButton onClick={submit} disabled={pending} className='flex-1'>
-                    {pending ? 'Salvando…' : 'Entrar no escritório'}
-                </BasicButton>
-            </div>
+        )
+    }
+
+    return (
+        <div className='flex flex-col items-center gap-3 w-full max-w-md'>
+            <p className='text-sm opacity-70 text-center'>
+                Para você receber menções e tarefas do ClickUp aqui no Aegis, confirme qual usuário
+                é você no workspace do time.
+            </p>
+            <ClickupIdentityPicker
+                members={clickupMembers}
+                aegisEmail={aegisEmail}
+                fetchError={clickupFetchError}
+                onLink={linkClickupAndFinish}
+                onSkip={skipClickupAndFinish}
+                skipLabel={pending ? 'Finalizando…' : 'Pular por agora'}
+                confirmLabel='Confirmar e entrar'
+            />
+            <button
+                type='button'
+                onClick={() => setStep(2)}
+                className='text-xs opacity-60 hover:opacity-90 mt-1'
+            >
+                ← Voltar para avatar
+            </button>
             {error && <p className='text-sm text-red-400 text-center'>{error}</p>}
         </div>
     )

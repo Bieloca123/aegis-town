@@ -5,6 +5,8 @@ import { Server as SocketIOServer } from 'socket.io'
 import { sockets } from './sockets/sockets'
 import routes from './routes/routes'
 import { notifyRouter } from './routes/notify'
+import { clickupRouter } from './routes/clickup'
+import { clickupWebhookRouter } from './routes/clickup-webhook'
 import { supabase } from './supabase'
 import { sessionManager } from './session'
 
@@ -17,8 +19,15 @@ app.use(cors({
     origin: process.env.FRONTEND_URL
 }))
 
-// JSON body parser — required by /webhooks/notify (and any future webhooks)
-app.use(express.json({ limit: '32kb' }))
+// JSON body parser — required by /webhooks/notify (and any future webhooks).
+// `verify` captures the raw body bytes onto req so HMAC signature verification
+// (used by /webhooks/clickup) can run on the exact payload ClickUp signed.
+app.use(express.json({
+    limit: '64kb',
+    verify: (req, _res, buf) => {
+        ;(req as express.Request & { rawBody?: Buffer }).rawBody = buf
+    },
+}))
 
 // Initialize Socket.IO server
 const io = new SocketIOServer(server, {
@@ -29,6 +38,8 @@ const io = new SocketIOServer(server, {
 
 app.use(routes())
 app.use(notifyRouter(io))
+app.use(clickupRouter())
+app.use(clickupWebhookRouter(io))
 
 sockets(io)
 
