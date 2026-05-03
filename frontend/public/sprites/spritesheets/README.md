@@ -87,10 +87,3 @@ sprite into its declared rect.
 
 After the file is in place no code changes are needed — the metadata module and
 editor palette are already wired up.
-
-## athena_hq seed realm (pending)
-
-Once `acropolis.png` is in and the editor renders the palette, build the launch
-realm in `/editor` with rooms: reception atrium → open workspace → two private
-meeting circles → server crypt. Save it, then export `realms.map_data` to
-`db/seeds/athena_hq.json` so it can be re-seeded into fresh Supabase environments.
