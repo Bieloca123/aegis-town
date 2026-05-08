@@ -114,6 +114,10 @@ export function sockets(io: Server) {
 
             const realm = data
 
+            if (!realm.map_data || !Array.isArray(realm.map_data.rooms) || realm.map_data.rooms.length === 0) {
+                return rejectJoin('Space has no map. Open it in the editor to set one up.')
+            }
+
             const join = async () => {
                 if (!sessionManager.getSession(realmData.realmId)) {
                     sessionManager.createSession(realmData.realmId, data.map_data)

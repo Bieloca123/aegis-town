@@ -37,8 +37,9 @@ const CreateRealmModal:React.FC = () => {
             owner_id: uid,
             name: realmName,
         }
-        if (useDefaultMap) {
-            realmData.map_data = defaultMap
+        realmData.map_data = useDefaultMap ? defaultMap : {
+            spawnpoint: { roomIndex: 0, x: 0, y: 0 },
+            rooms: [{ name: 'Room 1', tilemap: {} }],
         }
 
         const { data, error } = await supabase.from('realms').insert(realmData).select()
